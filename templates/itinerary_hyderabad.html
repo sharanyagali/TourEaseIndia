@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+{% block title %}{{ state }} · Dynamic Itinerary{% endblock %}
+{% block hero %}
+<section class="hero" style="background:#fff">
+  <div class="hero-inner">
+    <div>
+      <h1>{{ state }} · Dynamic Travel Planner</h1>
+      <p class="muted">Select trip duration to generate a structured, timeline-based itinerary.</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px">
+        <a class="btn btn-outline" href="/tickets">Tickets</a>
+        <a class="btn btn-outline" href="/maps">Maps & Routes</a>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+        <span class="muted">Trip Duration:</span>
+        {% for d in [3,4,5,6,7] %}
+          <a class="btn {% if d == days %}btn-primary{% else %}btn-outline{% endif %}" href="/itinerary?state={{ state|urlencode }}&days={{ d }}">{{ d }} Days</a>
+        {% endfor %}
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+        <span class="muted">Download as PDF:</span>
+        {% for d in [3,4,5,6,7] %}
+          <a class="btn btn-outline" href="/download_itinerary_pdf?state={{ state|urlencode }}&days={{ d }}">{{ d }}-Day PDF</a>
+        {% endfor %}
+      </div>
+    </div>
+    <div>
+      {% if cover_image %}
+        <img src="{{ cover_image }}" alt="{{ state }} cover" style="width:100%;border-radius:12px;border:1px solid #eee" onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/6/6e/India_collage.jpg'">
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endblock %}
+{% block content %}
+<style>
+  .day{background:#fff;border:1px solid #eee;border-radius:14px;padding:14px;box-shadow:0 10px 24px rgba(0,0,0,.06);margin:14px 0}
+  .timeline{border-left:3px solid #e0e0e0;padding-left:12px;margin-left:6px}
+  .badge{display:inline-block;background:#f0f7ff;border:1px solid #d6e7ff;color:#0b5fff;border-radius:999px;padding:4px 10px;font-size:12px}
+  .chip{display:inline-block;background:#fff1e6;border:1px solid #ffd6b3;color:#b45309;border-radius:999px;padding:4px 10px;font-size:12px}
+  details{border:1px solid #eee;border-radius:10px;padding:10px;margin:8px 0}
+  summary{font-weight:600;cursor:pointer}
+  .place-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .place-img{width:100%;border-radius:12px;border:1px solid #eee;box-shadow:0 8px 24px rgba(0,0,0,.06);cursor:pointer;transition:transform .2s, box-shadow .2s}
+  .place-img:hover{transform:scale(1.02);box-shadow:0 16px 36px rgba(0,0,0,.12)}
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:1000}
+  .modal.open{display:flex}
+  .modal-inner{position:relative;background:#000;border-radius:14px;overflow:hidden}
+  .modal-content{max-width:92vw;max-height:92vh;display:block}
+  .modal-close{position:absolute;top:10px;right:10px;background:#fff;border:none;border-radius:999px;width:36px;height:36px;cursor:pointer;box-shadow:0 6px 16px rgba(0,0,0,.25);font-size:18px;line-height:36px}
+</style>
+
+{% for day_idx in range(program|length) %}
+<div class="day">
+  <h2>Day {{ day_idx + 1 }}</h2>
+  <div class="timeline">
+    {% for p in program[day_idx] %}
+    <details>
+      <summary class="place-head">
+        <span>{{ p.name }}{% if p.schedule %} · {{ p.schedule }}{% endif %}</span>
+        <span class="muted">{% if p.when %}{{ p.when }}{% endif %}</span>
+      </summary>
+      {% if p.image %}
+        <img class="place-img" src="{{ p.image }}" alt="{{ p.name }}" onclick="openPreview('{{ p.image }}')" onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/6/6e/India_collage.jpg'">
+      {% endif %}
+      {% set map_query = (p.lat and p.lng) and (p.lat|string ~ ',' ~ p.lng|string)|replace(' ','') or (p.name ~ ' ' ~ (p.city or '') ~ ' ' ~ state) %}
+      <div style="margin-top:8px">
+        <a class="btn btn-outline" target="_blank" rel="noopener" href="https://www.google.com/maps/search/{{ map_query|urlencode }}">Open Map</a>
+      </div>
+      <p>{% if p.transport %}Transport: {{ p.transport }}{% endif %}</p>
+      <p>{% if p.guide %}Guide: {{ p.guide }}{% endif %}</p>
+      <p>{% if p.food %}Food: {{ p.food }}{% endif %}</p>
+      <p>{% if p.shopping %}Shopping: {{ p.shopping }}{% endif %}</p>
+      <p>{% if p.highlight %}Highlights: {{ p.highlight }}{% endif %}</p>
+    </details>
+    {% endfor %}
+  </div>
+</div>
+{% endfor %}
+<div class="modal" id="imgModal">
+  <div class="modal-inner" onclick="event.stopPropagation()">
+    <button class="modal-close" onclick="closePreview()">×</button>
+    <img id="imgPreview" class="modal-content" src="" alt="Preview">
+  </div>
+</div>
+<script>
+  function openPreview(src){ const m=document.getElementById('imgModal'); const i=document.getElementById('imgPreview'); i.src=src; m.classList.add('open'); }
+  function closePreview(){ document.getElementById('imgModal').classList.remove('open'); }
+  document.getElementById('imgModal').addEventListener('click', function(){ this.classList.remove('open'); });
+  document.addEventListener('keydown', function(e){ if(e.key==='Escape'){ closePreview(); }});
+</script>
+{% endblock %}

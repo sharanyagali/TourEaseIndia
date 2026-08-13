@@ -1,0 +1,460 @@
+{% extends 'base.html' %}
+{% block title %}{{ destination.name }} · TourEase India{% endblock %}
+{% block hero %}
+<section class="hero">
+    <div class="hero-inner">
+        <div>
+            <h1>{{ destination.name }} <span class="muted">· {{ destination.state }}</span></h1>
+            <p class="muted">Best season: {{ destination.best_season }}</p>
+            <div style="display:flex;gap:10px;flex-wrap:wrap">
+                <a class="btn btn-primary" href="/download_pdf?state={{ destination.state|urlencode }}&season={{ (destination.best_season or 'All')|urlencode }}">📥 Download Guide</a>
+                <button class="btn btn-outline" id="favoriteBtn" data-place-name="{{ destination.name }}" data-place-state="{{ destination.state }}" data-place-image="https://upload.wikimedia.org/wikipedia/commons/6/6e/India_collage.jpg" style="background:#fff;color:#667eea;border:2px solid #667eea">❤️ Add to Favorites</button>
+            </div>
+        </div>
+        {% if 'Hyderabad' not in destination.name %}
+        <div class="landmarks">
+            <div class="gallery">
+                <a href="https://images.pexels.com/photos/1633829/pexels-photo-1633829.jpeg" target="_blank" rel="noopener"><img src="https://images.pexels.com/photos/1633829/pexels-photo-1633829.jpeg?auto=compress&cs=tinysrgb&w=600" alt="Beach" loading="lazy"></a>
+                <a href="https://images.pexels.com/photos/3035861/pexels-photo-3035861.jpeg" target="_blank" rel="noopener"><img src="https://images.pexels.com/photos/3035861/pexels-photo-3035861.jpeg?auto=compress&cs=tinysrgb&w=600" alt="Fort" loading="lazy"></a>
+                <a href="https://images.pexels.com/photos/356830/pexels-photo-356830.jpeg" target="_blank" rel="noopener"><img src="https://images.pexels.com/photos/356830/pexels-photo-356830.jpeg?auto=compress&cs=tinysrgb&w=600" alt="Road" loading="lazy"></a>
+                <a href="https://images.pexels.com/photos/3331073/pexels-photo-3331073.jpeg" target="_blank" rel="noopener"><img src="https://images.pexels.com/photos/3331073/pexels-photo-3331073.jpeg?auto=compress&cs=tinysrgb&w=600" alt="Food" loading="lazy"></a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}
+{% block content %}
+    <style>
+        .detail-wrap{display:grid;grid-template-columns:720px 1fr;gap:24px}
+        @media(max-width:900px){.detail-wrap{grid-template-columns:1fr}}
+        .left-col{display:flex;flex-direction:column;gap:16px}
+        .place-main{width:100%;border-radius:16px;border:1px solid #e2e8f0;box-shadow:0 6px 16px rgba(0,0,0,.04);cursor:pointer;transition:transform .25s, box-shadow .25s}
+        .place-main:hover{transform:scale(1.02);box-shadow:0 12px 24px rgba(0,0,0,.08)}
+        .facts{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+        @media(max-width:600px){.facts{grid-template-columns:1fr}}
+        .map-embed{width:100%;height:280px;border:0;border-radius:12px}
+        .modal{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;z-index:1000}
+        .modal.open{display:flex}
+        .modal-inner{position:relative;background:#000;border-radius:12px;overflow:hidden;animation:pop .18s ease-out}
+        .modal-content{max-width:94vw;max-height:94vh;display:block}
+        .modal-close{position:absolute;top:10px;right:10px;background:#fff;border:none;border-radius:50%;width:38px;height:38px;cursor:pointer;box-shadow:0 6px 16px rgba(0,0,0,.25);font-size:18px;font-weight:bold;line-height:38px}
+        @keyframes pop{0%{transform:scale(.94);opacity:.6}100%{transform:scale(1);opacity:1}}
+        .transport-pills{display:flex;gap:10px;flex-wrap:wrap}
+        .transport-pills a{display:inline-block;padding:12px 16px;border-radius:10px;font-weight:700;box-shadow:0 4px 12px rgba(0,0,0,.08);transition:transform .2s, box-shadow .2s}
+        .transport-pills a:hover{transform:scale(1.03);box-shadow:0 8px 16px rgba(0,0,0,.12)}
+        .pill-rapido{background:linear-gradient(135deg,#06d6a0,#0cbaba);color:#fff}
+        .pill-bus{background:linear-gradient(135deg,#ff7a00,#ffd166);color:#fff}
+        .pill-metro{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff}
+        .pill-flight{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff}
+    </style>
+    <div class="detail-wrap">
+        <div class="left-col">
+            <div class="card">
+                <h2 class="section-title"><span>Why Visit?</span></h2>
+                <p class="muted">Experience the highlights of {{ destination.name }} with simple, clear guidance for all travelers.</p>
+                <h2 class="section-title"><span>City Transport & Bookings</span></h2>
+                <div class="transport-pills">
+                    <a class="pill-rapido" href="https://www.rapido.bike/" target="_blank" rel="noopener">Rapido</a>
+                    <a class="pill-bus" href="https://www.redbus.in/" target="_blank" rel="noopener">Bus Tickets</a>
+                    <a class="pill-flight" href="/tickets?from={{ destination.state|urlencode }}" target="_blank" rel="noopener">Flight Tickets</a>
+                    {% if transport and transport.metros and transport.metros|length > 0 %}
+                        {% for m in transport.metros %}
+                            <a class="pill-metro" href="{{ m.url }}" target="_blank" rel="noopener">{{ m.label }}</a>
+                        {% endfor %}
+                    {% elif transport and transport.has_metro %}
+                        <a class="pill-metro" href="https://www.google.com/search?q={{ (destination.state ~ ' metro tickets')|urlencode }}" target="_blank" rel="noopener">{{ destination.state }} Metro</a>
+                    {% endif %}
+                </div>
+                {% if destination.state == 'Telangana' %}
+                <div class="card" style="margin-top:10px">
+                    <strong>Tip</strong>
+                    <p class="muted" style="margin:6px 0">Metro tickets are available in PhonePe and Paytm. No need to download the T Savari app.</p>
+                </div>
+                {% endif %}
+                <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px">
+                    <a class="btn btn-outline" href="/download_pdf?state={{ destination.state|urlencode }}&season={{ (destination.best_season or 'All')|urlencode }}">Download Mini Guide</a>
+                    <a class="btn btn-outline" href="/itinerary?state={{ destination.state|urlencode }}&days=5">Add to Itinerary</a>
+                </div>
+            </div>
+            {% if 'Hyderabad' in destination.name %}
+            <div class="card">
+                <h2 class="section-title"><span>Hyderabad Places</span></h2>
+                <div class="card">
+                    <div class="season-filter">
+                        <strong>Filter by season</strong>
+                        <a class="btn btn-primary" data-season-btn="All" href="javascript:setSeasonFilter('All')">All</a>
+                        <a class="btn btn-outline" data-season-btn="Winter" href="javascript:setSeasonFilter('Winter')">Winter</a>
+                        <a class="btn btn-outline" data-season-btn="Monsoon" href="javascript:setSeasonFilter('Monsoon')">Monsoon</a>
+                        <a class="btn btn-outline" data-season-btn="Summer" href="javascript:setSeasonFilter('Summer')">Summer</a>
+                    </div>
+                </div>
+                <div class="card place-row-lr season-card" data-best="Winter" data-alt="Monsoon">
+                    <div>
+                        <h3>Charminar</h3>
+                        <span class="chip chip-winter">Best in Winter</span>
+                        <img src="https://www.adotrip.com/public/images/areas/master_images/5c4edc96a044b-Charminar_Places_to_See.jpg" alt="Charminar" class="place-main" onclick="openPlacePreview('https://www.adotrip.com/public/images/areas/master_images/5c4edc96a044b-Charminar_Places_to_See.jpg')">
+                        <div style="font-weight:700;margin-top:6px">Timings</div>
+                        <div class="muted">9:00 AM – 5:30 PM</div>
+                        <div style="font-weight:700;margin-top:6px">Entry Fee</div>
+                        <div class="muted">Indians ₹25 · Foreigners ₹300</div>
+                        <div style="font-weight:700;margin-top:6px">Best Time</div>
+                        <div class="muted">7:00–9:00 PM or early morning</div>
+                        <div style="font-weight:700;margin-top:6px">Alternatives</div>
+                        <div class="muted">Monsoon evenings for cooler weather</div>
+                        <div style="font-weight:700;margin-top:6px">Nearby Food</div>
+                        <div class="muted">Biryani, Irani Chai, Osmania Biscuits</div>
+                        <div style="font-weight:700;margin-top:6px">Nearby Stay</div>
+                        <div style="display:flex;gap:8px;flex-wrap:wrap">
+                            <a class="btn btn-outline" target="_blank" rel="noopener" href="https://www.google.com/maps/search/hotels+near+Charminar+Hyderabad">Hotels Nearby</a>
+                            <a class="btn btn-outline" target="_blank" rel="noopener" href="https://www.google.com/search?q=budget+stays+near+Charminar+Hyderabad">Budget Stays</a>
+                        </div>
+                    </div>
+                    <div>
+                        <div style="font-weight:700;margin-top:6px">Map</div>
+                        <iframe class="map-embed" src="https://www.google.com/maps?q=Charminar,+Hyderabad&output=embed" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+                    </div>
+                </div>
+                <div class="card place-row-lr season-card" data-best="Winter" data-alt="Monsoon">
+                    <div>
+                        <h3>Chowmahalla Palace</h3>
+                        <span class="chip chip-winter">Best in Winter</span>
+                        <div style="font-weight:700;margin-top:6px">Timings</div>
+                        <div class="muted">10:00 AM – 5:00 PM (Sat–Thu); Closed Fridays</div>
+                        <div style="font-weight:700;margin-top:6px">Entry Fee</div>
+                        <div class="muted">Indians ₹150 · Children ₹50 · Foreigners ₹500</div>
+                        <div style="font-weight:700;margin-top:6px">Best Time</div>
+                        <div class="muted">Morning 10:00–12:00</div>
+                        <div style="font-weight:700;margin-top:6px">Alternatives</div>
+                        <div class="muted">Monsoon clear days</div>
+                        <img src="https://travel.4kerala.in/wp-content/uploads/2023/12/qutb-shahi-tombs.jpg" alt="Chowmahalla Palace" class="place-main" onclick="openPlacePreview('https://travel.4kerala.in/wp-content/uploads/2023/12/qutb-shahi-tombs.jpg')">
+                        <div style="font-weight:700;margin-top:6px">Nearby Stay</div>
+                        <div style="display:flex;gap:8px;flex-wrap:wrap">
+                            <a class="btn btn-outline" target="_blank" rel="noopener" href="https://www.google.com/maps/search/hotels+near+Chowmahalla+Palace+Hyderabad">Hotels Nearby</a>
+                            <a class="btn btn-outline" target="_blank" rel="noopener" href="https://www.google.com/search?q=budget+stays+near+Chowmahalla+Palace+Hyderabad">Budget Stays</a>
+                        </div>
+                    </div>
+                    <div>
+                        <div style="font-weight:700;margin-top:6px">Map</div>
+                        <iframe class="map-embed" src="https://www.google.com/maps?q=Chowmahalla+Palace,+Hyderabad&output=embed" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+                    </div>
+                </div>
+                <div class="card place-row-lr season-card" data-best="Winter" data-alt="Summer">
+                    <div>
+                        <h3>Ramoji Film City</h3>
+                        <span class="chip chip-winter">Best in Winter</span>
+                        <div style="font-weight:700;margin-top:6px">Timings</div>
+                        <div class="muted">~9:00 AM – 5:30 PM</div>
+                        <div style="font-weight:700;margin-top:6px">Entry Fee</div>
+                        <div class="muted">Adults ₹1,350 + taxes · Children ₹1,150 + taxes</div>
+                        <div style="font-weight:700;margin-top:6px">Best Time</div>
+                        <div class="muted">Weekday morning</div>
+                        <div style="font-weight:700;margin-top:6px">Alternatives</div>
+                        <div class="muted">Summer mornings</div>
+                        <img src="https://letsgohyderabad.com/wp-content/uploads/2024/12/Ramoji_Film_City-1.jpg" alt="Ramoji Film City" class="place-main" onclick="openPlacePreview('https://letsgohyderabad.com/wp-content/uploads/2024/12/Ramoji_Film_City-1.jpg')">
+                        <div style="font-weight:700;margin-top:6px">Nearby Stay</div>
+                        <div style="display:flex;gap:8px;flex-wrap:wrap">
+                            <a class="btn btn-outline" target="_blank" rel="noopener" href="https://www.google.com/maps/search/hotels+near+Ramoji+Film+City+Hyderabad">Hotels Nearby</a>
+                            <a class="btn btn-outline" target="_blank" rel="noopener" href="https://www.google.com/search?q=budget+stays+near+Ramoji+Film+City+Hyderabad">Budget Stays</a>
+                        </div>
+                    </div>
+                    <div>
+                        <div style="font-weight:700;margin-top:6px">Map</div>
+                        <iframe class="map-embed" src="https://www.google.com/maps?q=Ramoji+Film+City,+Hyderabad&output=embed" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+                    </div>
+                </div>
+                <div class="card place-row-lr season-card" data-best="Winter" data-alt="Summer">
+                    <div>
+                        <h3>Golconda Fort</h3>
+                        <span class="chip chip-winter">Best in Winter</span>
+                        <div style="font-weight:700;margin-top:6px">Timings</div>
+                        <div class="muted">9:00 AM – 5:30 PM</div>
+                        <div style="font-weight:700;margin-top:6px">Entry Fee</div>
+                        <div class="muted">Indians ₹25 · Foreigners ₹300</div>
+                        <div style="font-weight:700;margin-top:6px">Best Time</div>
+                        <div class="muted">Morning 9:00–12:00; Sound & Light Show 6:30 PM</div>
+                        <div style="font-weight:700;margin-top:6px">Alternatives</div>
+                        <div class="muted">Summer evenings for Light & Sound</div>
+                        <img src="https://thumbs.dreamstime.com/b/golconda-fort-3720711.jpg" alt="Golconda Fort" class="place-main" onclick="openPlacePreview('https://thumbs.dreamstime.com/b/golconda-fort-3720711.jpg')">
+                        <div style="font-weight:700;margin-top:6px">Nearby Stay</div>
+                        <div style="display:flex;gap:8px;flex-wrap:wrap">
+                            <a class="btn btn-outline" target="_blank" rel="noopener" href="https://www.google.com/maps/search/hotels+near+Golconda+Fort+Hyderabad">Hotels Nearby</a>
+                            <a class="btn btn-outline" target="_blank" rel="noopener" href="https://www.google.com/search?q=budget+stays+near+Golconda+Fort+Hyderabad">Budget Stays</a>
+                        </div>
+                    </div>
+                    <div>
+                        <div style="font-weight:700;margin-top:6px">Map</div>
+                        <iframe class="map-embed" src="https://www.google.com/maps?q=Golconda+Fort,+Hyderabad&output=embed" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+                    </div>
+                </div>
+                <div class="card place-row-lr season-card" data-best="Winter" data-alt="Monsoon,Summer">
+                    <div>
+                        <h3>Birla Mandir</h3>
+                        <span class="chip chip-winter">Best in Winter</span>
+                        <div style="font-weight:700">Timings</div>
+                        <div class="muted">7:00–12:00 · 15:00–21:00</div>
+                        <div style="font-weight:700;margin-top:6px">Restrictions</div>
+                        <div class="muted">Cameras/phones/electronics not allowed; lockers available</div>
+                        <div style="font-weight:700;margin-top:6px">Entry Fee</div>
+                        <div class="muted">Free</div>
+                        <div style="font-weight:700;margin-top:6px">Best Time</div>
+                        <div class="muted">Evening views or early morning</div>
+                        <div style="font-weight:700;margin-top:6px">Alternatives</div>
+                        <div class="muted">All seasons; avoid midday heat</div>
+                        <img src="https://hyderabadtourism.co.in/wp-content/uploads/2024/05/Birla_Mandir_Hyderabad_2-1024x649.jpg" alt="Birla Mandir" class="place-main" onclick="openPlacePreview('https://hyderabadtourism.co.in/wp-content/uploads/2024/05/Birla_Mandir_Hyderabad_2-1024x649.jpg')">
+                        <div style="font-weight:700;margin-top:6px">Nearby Stay</div>
+                        <div style="display:flex;gap:8px;flex-wrap:wrap">
+                            <a class="btn btn-outline" target="_blank" rel="noopener" href="https://www.google.com/maps/search/hotels+near+Birla+Mandir+Hyderabad">Hotels Nearby</a>
+                            <a class="btn btn-outline" target="_blank" rel="noopener" href="https://www.google.com/search?q=budget+stays+near+Birla+Mandir+Hyderabad">Budget Stays</a>
+                        </div>
+                    </div>
+                    <div>
+                        <div style="font-weight:700;margin-top:6px">Map</div>
+                        <iframe class="map-embed" src="https://www.google.com/maps?q=Birla+Mandir,+Hyderabad&output=embed" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+                    </div>
+                </div>
+                <div class="card place-row-lr season-card" data-best="Winter" data-alt="Monsoon">
+                    <div>
+                        <h3>Nehru Zoological Park</h3>
+                        <span class="chip chip-winter">Best in Winter</span>
+                        <img src="https://images.trvl-media.com/media/content/shared/images/travelguides/destination/6053329/Nehru-Zoological-Park-75502.jpg" alt="Nehru Zoological Park" class="place-main" onclick="openPlacePreview('https://images.trvl-media.com/media/content/shared/images/travelguides/destination/6053329/Nehru-Zoological-Park-75502.jpg')">
+                        <div style="font-weight:700;margin-top:6px">Timings</div>
+                        <div class="muted">8:30 AM – 4:00/5:00 PM · Closed Mondays</div>
+                        <div style="font-weight:700;margin-top:6px">Entry Fee</div>
+                        <div class="muted">Adults ₹70–₹100 · Children ₹45–₹50 · Foreigners ~₹100+</div>
+                        <div style="font-weight:700;margin-top:6px">Extras</div>
+                        <div class="muted">Camera ₹120 · Video ₹600 · Battery Vehicle ~₹100 · Toy Train ~₹80</div>
+                        <div style="font-weight:700;margin-top:6px">Best Time</div>
+                        <div class="muted">Morning hours; avoid peak afternoon heat</div>
+                        <div style="font-weight:700;margin-top:6px">Alternatives</div>
+                        <div class="muted">Monsoon mornings</div>
+                        <div style="font-weight:700;margin-top:6px">Nearby Stay</div>
+                        <div style="display:flex;gap:8px;flex-wrap:wrap">
+                            <a class="btn btn-outline" target="_blank" rel="noopener" href="https://www.google.com/maps/search/hotels+near+Nehru+Zoological+Park+Hyderabad">Hotels Nearby</a>
+                            <a class="btn btn-outline" target="_blank" rel="noopener" href="https://www.google.com/search?q=budget+stays+near+Nehru+Zoological+Park+Hyderabad">Budget Stays</a>
+                        </div>
+                    </div>
+                    <div>
+                        <div style="font-weight:700;margin-top:6px">Map</div>
+                        <iframe class="map-embed" src="https://www.google.com/maps?q=Nehru+Zoological+Park,+Hyderabad&output=embed" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+                    </div>
+                </div>
+                <div class="card place-row-lr season-card" data-best="Winter" data-alt="Monsoon">
+                    <div>
+                        <h3>Qutub Shahi Tombs</h3>
+                        <span class="chip chip-winter">Best in Winter</span>
+                        <img src="https://travel.4kerala.in/wp-content/uploads/2023/12/qutb-shahi-tombs.jpg" alt="Qutub Shahi Tombs" class="place-main" onclick="openPlacePreview('https://travel.4kerala.in/wp-content/uploads/2023/12/qutb-shahi-tombs.jpg')">
+                        <div style="font-weight:700;margin-top:6px">Timings</div>
+                        <div class="muted">~9:30 AM – 5:30 PM (may vary by day)</div>
+                        <div style="font-weight:700;margin-top:6px">Entry Fee</div>
+                        <div class="muted">Adults ₹10 · Children ₹5</div>
+                        <div style="font-weight:700;margin-top:6px">Camera Fee</div>
+                        <div class="muted">₹20–₹50 depending on source</div>
+                        <div style="font-weight:700;margin-top:6px">Best Time</div>
+                        <div class="muted">Morning; evenings for cooler weather</div>
+                        <div style="font-weight:700;margin-top:6px">Alternatives</div>
+                        <div class="muted">Monsoon evenings</div>
+                        <div style="font-weight:700;margin-top:6px">Nearby Stay</div>
+                        <div style="display:flex;gap:8px;flex-wrap:wrap">
+                            <a class="btn btn-outline" target="_blank" rel="noopener" href="https://www.google.com/maps/search/hotels+near+Qutub+Shahi+Tombs+Hyderabad">Hotels Nearby</a>
+                            <a class="btn btn-outline" target="_blank" rel="noopener" href="https://www.google.com/search?q=budget+stays+near+Qutub+Shahi+Tombs+Hyderabad">Budget Stays</a>
+                        </div>
+                    </div>
+                    <div>
+                        <div style="font-weight:700;margin-top:6px">Map</div>
+                        <iframe class="map-embed" src="https://www.google.com/maps?q=Qutub+Shahi+Tombs,+Hyderabad&output=embed" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+                    </div>
+                </div>
+                <div class="card place-row-lr season-card" data-best="Winter" data-alt="Summer,Monsoon">
+                    <div>
+                        <h3>Salar Jung Museum</h3>
+                        <span class="chip chip-winter">Best in Winter</span>
+                        <img src="https://www.travellinglegend.in/wp-content/uploads/2021/06/Salar-Jung-image-1.jpg" alt="Salar Jung Museum" class="place-main" onclick="openPlacePreview('https://www.travellinglegend.in/wp-content/uploads/2021/06/Salar-Jung-image-1.jpg')">
+                        <div style="font-weight:700;margin-top:6px">Timings</div>
+                        <div class="muted">10:00 AM – 5:00 PM · Closed Fridays & Public Holidays</div>
+                        <div style="font-weight:700;margin-top:6px">Entry Fee</div>
+                        <div class="muted">Adult ₹50 · Child (5+) ₹20 · Foreign Visitor ₹500 · Below 5 Free</div>
+                        <div style="font-weight:700;margin-top:6px">Camera Fee</div>
+                        <div class="muted">₹50</div>
+                        <div style="font-weight:700;margin-top:6px">Best Time</div>
+                        <div class="muted">Morning to mid-day; plan 2–3 hours</div>
+                        <div style="font-weight:700;margin-top:6px">Alternatives</div>
+                        <div class="muted">Summer afternoons for indoor comfort</div>
+                        <div style="font-weight:700;margin-top:6px">Nearby Stay</div>
+                        <div style="display:flex;gap:8px;flex-wrap:wrap">
+                            <a class="btn btn-outline" target="_blank" rel="noopener" href="https://www.google.com/maps/search/hotels+near+Salar+Jung+Museum+Hyderabad">Hotels Nearby</a>
+                            <a class="btn btn-outline" target="_blank" rel="noopener" href="https://www.google.com/search?q=budget+stays+near+Salar+Jung+Museum+Hyderabad">Budget Stays</a>
+                        </div>
+                    </div>
+                    <div>
+                        <div style="font-weight:700;margin-top:6px">Map</div>
+                        <iframe class="map-embed" src="https://www.google.com/maps?q=Salar+Jung+Museum,+Hyderabad&output=embed" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+                    </div>
+                </div>
+            {% endif %}
+            <div class="card">
+                <h2 style="margin:0">{{ destination.name }}</h2>
+                <p class="muted" style="margin:6px 0">{{ destination.description or 'Explore this destination with curated guides and tips.' }}</p>
+                <div class="facts">
+                    <div>
+                        <div style="font-weight:700">Timings</div>
+                        {% if 'Hyderabad' in destination.name %}
+                            <div class="muted">Golconda 9:00–17:30 · Charminar 9:00–17:30</div>
+                        {% elif 'Goa' in destination.name %}
+                            <div class="muted">Beaches sunrise–sunset</div>
+                        {% else %}
+                            <div class="muted">Varies by attraction</div>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <div style="font-weight:700">Entry Fee</div>
+                        {% if 'Hyderabad' in destination.name %}
+                            <div class="muted">Golconda ₹25 · Charminar ₹25</div>
+                        {% else %}
+                            <div class="muted">Mostly free or nominal</div>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <div style="font-weight:700">Nearby Food</div>
+                        {% if 'Hyderabad' in destination.name %}
+                            <div class="muted">Biryani, Irani Chai, Kebabs</div>
+                        {% elif 'Goa' in destination.name %}
+                            <div class="muted">Seafood, Bebinca, Cafés</div>
+                        {% else %}
+                            <div class="muted">Local snacks and cafés</div>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <div style="font-weight:700">Best Season</div>
+                        <div class="muted">{{ destination.best_season }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <h2 class="section-title"><span>Map</span></h2>
+                <iframe class="map-embed" src="{{ destination.map_embed_url or ('https://www.google.com/maps?q=' ~ destination.name|urlencode ~ '&output=embed') }}" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+            </div>
+            <div class="card">
+                <h2 class="section-title"><span>Stay</span></h2>
+                {% if hotels and hotels|length > 0 %}
+                    {% for h in hotels %}
+                    <div class="card">
+                        <div><strong>{{ h.name }}</strong></div>
+                        <div class="muted">Location: {{ h.location or '—' }}</div>
+                        <div class="muted">Price range: ₹{{ h.price_range }}</div>
+                        <p>{{ h.description or '' }}</p>
+                        <div style="display:flex;gap:8px;flex-wrap:wrap">
+                            <a class="btn btn-outline" target="_blank" rel="noopener" href="https://www.google.com/maps/search/{{ (h.name ~ ' ' ~ destination.name)|replace(' ','+') }}">Open in Maps</a>
+                            <a class="btn btn-outline" target="_blank" rel="noopener" href="https://www.google.com/search?q={{ (h.name ~ ' ' ~ destination.name ~ ' phone')|replace(' ','+') }}">Contact / Phone</a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    {% if 'Goa' in destination.name %}
+                        <div class="muted">Calangute/Baga · ₹2500–₹6000</div>
+                    {% elif 'Hyderabad' in destination.name %}
+                        <div class="muted">Abids/Lakdikapul · ₹1800–₹4500</div>
+                    {% else %}
+                        <div class="muted">City Center · ₹2000–₹5000</div>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+        <div></div>
+    </div>
+    <div class="modal" id="placeModal">
+        <div class="modal-inner" onclick="event.stopPropagation()">
+            <button class="modal-close" onclick="closePlacePreview()">×</button>
+            <img id="placePreview" class="modal-content" src="" alt="Preview">
+        </div>
+    </div>
+    <script>
+        function openPlacePreview(src){ const m=document.getElementById('placeModal'); const i=document.getElementById('placePreview'); i.src=src; m.classList.add('open'); }
+        function closePlacePreview(){ document.getElementById('placeModal').classList.remove('open'); }
+        document.getElementById('placeModal').addEventListener('click', function(){ this.classList.remove('open'); });
+        document.addEventListener('keydown', function(e){ if(e.key==='Escape'){ closePlacePreview(); }});
+        function setSeasonFilter(s){
+            var cards = document.querySelectorAll('.season-card');
+            cards.forEach(function(c){
+                var best = (c.getAttribute('data-best')||'').trim();
+                var alt = (c.getAttribute('data-alt')||'').split(',').map(function(x){ return x.trim(); });
+                var show = (s==='All') || (best===s) || (alt.indexOf(s)>=0);
+                c.style.display = show ? 'block' : 'none';
+            });
+            var btns = document.querySelectorAll('[data-season-btn]');
+            btns.forEach(function(b){
+                var is = b.getAttribute('data-season-btn')===s;
+                b.classList.toggle('btn-primary', is);
+                b.classList.toggle('btn-outline', !is);
+            });
+        }
+        setSeasonFilter('All');
+        
+        // Check if favorite on load
+        async function checkFavorite() {
+            try {
+                const btn = document.getElementById('favoriteBtn');
+                const name = btn.getAttribute('data-place-name');
+                const state = btn.getAttribute('data-place-state');
+                const response = await fetch('/api/favorites/check?name=' + encodeURIComponent(name) + '&state=' + encodeURIComponent(state));
+                const data = await response.json();
+                if (data.is_favorite) {
+                    btn.textContent = '❤️ Remove from Favorites';
+                    btn.style.background = '#fecaca';
+                    btn.style.borderColor = '#f87171';
+                    btn.style.color = '#991b1b';
+                }
+            } catch (e) {}
+        }
+        
+        // Setup favorite button click handler
+        document.getElementById('favoriteBtn').addEventListener('click', function() {
+            const name = this.getAttribute('data-place-name');
+            const state = this.getAttribute('data-place-state');
+            const image = this.getAttribute('data-place-image');
+            toggleFavorite(name, state, image);
+        });
+        
+        checkFavorite();
+        
+        async function toggleFavorite(name, state, image) {
+            const btn = document.getElementById('favoriteBtn');
+            try {
+                // If already favorited, remove it
+                if (btn.textContent.includes('Remove')) {
+                    const response = await fetch('/api/favorites/remove', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({place_name: name, state: state})
+                    });
+                    if (response.ok) {
+                        btn.textContent = '❤️ Add to Favorites';
+                        btn.style.background = '#fff';
+                        btn.style.color = '#667eea';
+                        btn.style.borderColor = '#667eea';
+                    }
+                } else {
+                    // Add to favorites
+                    const response = await fetch('/api/favorites/add', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            place_name: name,
+                            state: state,
+                            image_url: image
+                        })
+                    });
+                    const data = await response.json();
+                    if (data.ok && !data.removed) {
+                        btn.textContent = '❤️ Remove from Favorites';
+                        btn.style.background = '#fecaca';
+                        btn.style.borderColor = '#f87171';
+                        btn.style.color = '#991b1b';
+                    }
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+    </script>
+{% endblock %}

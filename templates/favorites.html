@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+{% block title %}My Favorites · TourEase India{% endblock %}
+{% block hero %}
+<section class="hero" style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff">
+    <div class="hero-inner">
+        <div>
+            <h1 style="color:#fff">❤️ My Favorite Places</h1>
+            <p style="color:rgba(255,255,255,0.9)">Your curated list of must-visit destinations across India</p>
+        </div>
+    </div>
+</section>
+{% endblock %}
+{% block content %}
+<style>
+    .favorites-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px;max-width:1100px;margin:0 auto}
+    .favorite-card{background:#fff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,0.04);transition:all .3s}
+    .favorite-card:hover{transform:translateY(-4px);box-shadow:0 12px 24px rgba(0,0,0,0.08)}
+    .favorite-img{width:100%;height:180px;object-fit:cover;display:block}
+    .favorite-content{padding:16px}
+    .favorite-name{font-size:16px;font-weight:700;color:#2d3748;margin:0 0 8px}
+    .favorite-location{color:#718096;font-size:14px;margin:0 0 12px}
+    .favorite-rating{display:inline-block;background:#fed7aa;color:#92400e;padding:4px 8px;border-radius:4px;font-size:13px;font-weight:600}
+    .favorite-actions{display:flex;gap:8px;margin-top:12px}
+    .favorite-actions button,.favorite-actions a{flex:1;padding:8px;border:none;border-radius:6px;cursor:pointer;text-align:center;font-size:13px;font-weight:600;transition:all .2s;text-decoration:none}
+    .btn-view{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff}
+    .btn-view:hover{transform:scale(1.02)}
+    .btn-remove{background:#fed7d7;color:#c53030;border:1px solid #fc8181}
+    .btn-remove:hover{background:#fc8181;color:#fff}
+    .empty-state{text-align:center;padding:60px 20px}
+    .empty-icon{font-size:64px;margin-bottom:16px}
+    .empty-title{color:#2d3748;font-size:24px;margin:0 0 8px}
+    .empty-text{color:#718096;font-size:14px;margin:0 0 24px}
+    .favorites-count{background:#f0fdf4;border:1px solid #dcfce7;border-radius:8px;padding:12px 16px;margin-bottom:20px;text-align:center;color:#15803d;font-weight:600}
+</style>
+
+<div style="max-width:1100px;margin:0 auto;padding:0 16px">
+    {% if count > 0 %}
+        <div class="favorites-count">
+            ⭐ You have {{ count }} saved place{% if count != 1 %}s{% endif %}
+        </div>
+        
+        <div class="favorites-grid">
+            {% for fav in favorites %}
+            <div class="favorite-card">
+                <img src="{{ fav['image_url'] or 'https://upload.wikimedia.org/wikipedia/commons/6/6e/India_collage.jpg' }}" alt="{{ fav['place_name'] }}" class="favorite-img" onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/6/6e/India_collage.jpg'">
+                <div class="favorite-content">
+                    <h3 class="favorite-name">{{ fav['place_name'] }}</h3>
+                    <div class="favorite-location">
+                        📍 {{ fav['city'] }}{% if fav['city'] %},{% endif %} {{ fav['state'] }}
+                    </div>
+                    {% if fav['rating'] %}
+                    <span class="favorite-rating">★ {{ fav['rating'] }}</span>
+                    {% endif %}
+                    <div class="favorite-actions">
+                        <a href="/download_pdf?state={{ fav['state']|urlencode }}&season=All" class="btn-view">📥 PDF</a>
+                        <button class="btn-remove" onclick="removeFavorite(this, '{{ fav['place_name']|replace(\"'\", \"\\\\'\") }}', '{{ fav['state'] }}')">❌ Remove</button>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">💭</div>
+            <h2 class="empty-title">No Favorites Yet</h2>
+            <p class="empty-text">Start exploring destinations and add them to your favorites!</p>
+            <a class="btn btn-primary" href="/" style="padding:12px 28px">Explore Destinations</a>
+        </div>
+    {% endif %}
+</div>
+
+<script>
+    async function removeFavorite(btn, placeName, state) {
+        if (!confirm('Remove from favorites?')) return;
+        
+        try {
+            const response = await fetch('/api/favorites/remove', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    place_name: placeName,
+                    state: state
+                })
+            });
+            
+            const data = await response.json();
+            if (data.ok) {
+                btn.closest('.favorite-card').style.opacity = '0.5';
+                setTimeout(() => {
+                    btn.closest('.favorite-card').style.transform = 'scale(0.9)';
+                    setTimeout(() => location.reload(), 200);
+                }, 100);
+            }
+        } catch (e) {
+            alert('Error removing favorite');
+        }
+    }
+</script>
+{% endblock %}

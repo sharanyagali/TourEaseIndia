@@ -1,0 +1,129 @@
+{% extends 'base.html' %}
+{% block title %}Offline Guide · TourEase India{% endblock %}
+{% block hero %}
+<section class="hero" style="background:linear-gradient(90deg,#ffe8b3,#fff)">
+    <div class="hero-inner">
+        <div>
+            <h1>Offline Guide</h1>
+            <p class="muted">Open a destination and use “Download Guide” to save a PDF.</p>
+        </div>
+        <div class="landmarks"><div class="plane"></div></div>
+    </div>
+</section>
+{% endblock %}
+{% block content %}
+    <div class="card">
+        <h2 class="section-title"><span>By Destination</span></h2>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div>
+                <label for="destSearch">Search destination</label>
+                <input id="destSearch" type="text" placeholder="Type to filter (e.g., Delhi)">
+            </div>
+            <div>
+                <label for="destination_id">Destination</label>
+                <form method="POST">
+                    <select id="destination_id" name="destination_id" required>
+                        <option value="">Choose...</option>
+                        {% for d in destinations %}
+                            <option value="{{ d.id }}">{{ d.name }}</option>
+                        {% endfor %}
+                        {% if places %}
+                        <optgroup label="Places">
+                            {% for p in places %}
+                                <option data-type="place" data-state="{{ p.state }}" data-city="{{ p.city }}" data-name="{{ p.name }}" value="">{{ p.name }} — {{ p.city }}, {{ p.state }}</option>
+                            {% endfor %}
+                        </optgroup>
+                        {% endif %}
+                        <optgroup label="States">
+                            {% for s in states %}
+                                <option data-type="state" value="">{{ s }}</option>
+                            {% endfor %}
+                        </optgroup>
+                    </select>
+                    {% if (destinations|length == 0) and (not places) and (states|length == 0) %}
+                    <div class="muted" style="margin-top:8px">No data available for this selection.</div>
+                    {% endif %}
+                    <div style="margin-top:12px">
+                        <button id="openGuideBtn" class="btn btn-primary" type="button">Open Guide</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <script>
+            (function(){
+                var input = document.getElementById('destSearch');
+                var sel = document.getElementById('destination_id');
+                if(input && sel){
+                    input.addEventListener('input', function(){
+                        var q = this.value.toLowerCase();
+                        for(var i=0;i<sel.options.length;i++){
+                            var opt = sel.options[i];
+                            if(!opt.value && !opt.getAttribute('data-type')) continue;
+                            var t = opt.text.toLowerCase();
+                            opt.hidden = q && t.indexOf(q) === -1;
+                        }
+                    });
+                    var btn = document.getElementById('openGuideBtn');
+                    if(btn){
+                        btn.addEventListener('click', function(){
+                            var opt = sel.options[sel.selectedIndex];
+                            if(!opt) return;
+                            var t = opt.getAttribute('data-type');
+                            if(t === 'state'){
+                                var state = opt.text;
+                                window.location.href = '/places_by_state?state=' + encodeURIComponent(state) + '&season=All';
+                            }else if(t === 'place'){
+                                var state = opt.getAttribute('data-state') || '';
+                                var city = opt.getAttribute('data-city') || '';
+                                var name = opt.getAttribute('data-name') || '';
+                                var slug = ('place-' + name.toLowerCase().replace(/[^a-z0-9]+/g,'-') + '-' + city.toLowerCase().replace(/[^a-z0-9]+/g,'-')).replace(/-+/g,'-');
+                                var url = '/places_by_state?state=' + encodeURIComponent(state) + '&season=All#' + slug;
+                                window.location.href = url;
+                            }else{
+                                sel.form.submit();
+                            }
+                        });
+                    }
+                }
+            })();
+        </script>
+    </div>
+    <div class="card" style="margin-top:14px">
+        <h2 class="section-title"><span>By State</span></h2>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div>
+                <label for="stateSearch">Search state</label>
+                <input id="stateSearch" type="text" placeholder="Type to filter (e.g., Telangana)">
+            </div>
+            <div>
+                <label for="stateSelect">State</label>
+                <select id="stateSelect">
+                    <option value="">Choose...</option>
+                    {% for s in states %}
+                        <option value="{{ s }}">{{ s }}</option>
+                    {% endfor %}
+                </select>
+                <div style="margin-top:12px">
+                    <button class="btn btn-primary" type="button" onclick="(function(){var s=document.getElementById('stateSelect').value; if(s){ window.location.href='/places_by_state?state='+encodeURIComponent(s)+'&season=All'; } })()">Open State Guide</button>
+                </div>
+            </div>
+        </div>
+        <script>
+            (function(){
+                var input = document.getElementById('stateSearch');
+                var sel = document.getElementById('stateSelect');
+                if(input && sel){
+                    input.addEventListener('input', function(){
+                        var q = this.value.toLowerCase();
+                        for(var i=0;i<sel.options.length;i++){
+                            var opt = sel.options[i];
+                            if(!opt.value) continue;
+                            var t = opt.text.toLowerCase();
+                            opt.hidden = q && t.indexOf(q) === -1;
+                        }
+                    });
+                }
+            })();
+        </script>
+    </div>
+{% endblock %}

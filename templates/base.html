@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{% block title %}TourEase India{% endblock %}</title>
+    <link rel="stylesheet" href="/static/css/style.css" />
+    <style>
+        :root{
+            --bg:#f8fafc;
+            --text:#1a202c;
+            --muted:#64748b;
+            --primary:#667eea;
+            --primary2:#764ba2;
+            --accent:#06d6a0;
+            --success:#38a169;
+            --border:#e2e8f0;
+        }
+        *{box-sizing:border-box}
+        body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',Arial,sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
+        a{color:inherit;text-decoration:none}
+        .nav{
+            position:sticky;top:0;z-index:50;
+            backdrop-filter:saturate(1.2) blur(8px);
+            background:rgba(255,255,255,0.85);
+            border-bottom:1px solid var(--border);
+        }
+        .nav-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding:12px 16px}
+        .brand{display:flex;align-items:center;gap:10px;font-weight:700;color:#667eea}
+        .brand svg{width:28px;height:28px}
+        @keyframes float{0%{transform:translateY(0)}50%{transform:translateY(-4px)}100%{transform:translateY(0)}}
+        .links{display:flex;gap:12px;flex-wrap:wrap}
+        .links a{padding:8px 12px;border-radius:6px;transition:.2s;font-size:14px;font-weight:500}
+        .links a:hover{background:#f0f7ff;color:#667eea}
+        .top-stats{display:flex;gap:12px;align-items:center;color:#64748b}
+        .badge-pill{display:inline-block;background:#f0f7ff;border:1px solid var(--border);border-radius:6px;padding:6px 12px;font-size:13px;font-weight:600}
+        .container{max-width:1100px;margin:20px auto;padding:0 16px}
+        .hero{position:relative;overflow:hidden;margin:0;background:#fff;border-bottom:1px solid var(--border);}
+        .hero-inner{max-width:1100px;margin:0 auto;padding:32px 16px;display:grid;grid-template-columns:1.1fr .9fr;gap:20px;align-items:center}
+        @media (max-width:900px){.hero-inner{grid-template-columns:1fr}}
+        .hero h1{font-size:36px;margin:0 0 12px;color:#1a202c;font-weight:700}
+        .hero p{color:var(--muted);margin:0 0 16px;font-size:16px}
+        .btn{display:inline-block;padding:10px 14px;border-radius:8px;border:none;cursor:pointer;text-decoration:none;transition:.2s;font-weight:600}
+        .btn-primary{background:linear-gradient(135deg,var(--primary),var(--primary2));color:#fff;box-shadow:0 6px 16px rgba(102,126,234,0.3)}
+        .btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(102,126,234,0.4)}
+        .btn-outline{background:#fff;color:var(--primary);border:2px solid var(--primary)}
+        .btn-outline:hover{background:#f0f7ff;transform:translateY(-1px)}
+        .btn:hover{transform:translateY(-1px)}
+        .card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:16px;box-shadow:0 4px 12px rgba(0,0,0,0.04)}
+        .grid{display:grid;grid-template-columns:1fr;gap:16px}
+        @media(min-width:900px){.grid{grid-template-columns:repeat(3,1fr)}}
+        .muted{color:var(--muted)}
+        .section-title{ text-align:center; font-weight:700; letter-spacing:.3px; margin:16px 0 20px; font-size:24px;}
+        .section-title span{
+            background:linear-gradient(135deg,#667eea,#764ba2,#f093fb,#4facfe);
+            -webkit-background-clip:text;background-clip:text;color:transparent;
+        }
+        .place-row-lr{display:grid;grid-template-columns:1.1fr .9fr;gap:12px;align-items:start}
+        @media (max-width:900px){.place-row-lr{grid-template-columns:1fr}}
+        .place-img{width:100%;border-radius:12px;border:1px solid var(--border);box-shadow:0 6px 16px rgba(0,0,0,0.08);cursor:pointer;transition:transform .2s, box-shadow .2s}
+        .place-img:hover{transform:scale(1.02);box-shadow:0 10px 24px rgba(0,0,0,0.12)}
+        .transport-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+        @media (max-width:900px){.transport-grid{grid-template-columns:1fr}}
+        .transport-card{padding:14px;border:2px solid var(--border);border-radius:12px;background:#fff;box-shadow:0 4px 12px rgba(0,0,0,0.04);transition:transform .2s, box-shadow .2s}
+        .transport-card:hover{transform:scale(1.03);box-shadow:0 8px 18px rgba(0,0,0,0.08)}
+        .moving-strip{position:relative; width:100%; height:100px; background:linear-gradient(#f0f7ff,#fff); border-bottom:1px solid var(--border);}
+        .strip-label{position:absolute;top:8px;left:50%;transform:translateX(-50%);font-weight:700;color:#667eea;letter-spacing:.4px;font-size:14px}
+        .road{position:absolute;bottom:10px;left:0;right:0;height:35px;background:#667eea;}
+        .rail{position:absolute;bottom:55px;left:0;right:0;height:5px;background:#94a3b8;}
+        .bus,.bike,.train,.plane{position:absolute;display:inline-block}
+        .bus{bottom:15px;left:-120px;width:100px;height:30px;background:#ff7a00;border-radius:6px;box-shadow:0 3px 8px rgba(0,0,0,0.2);animation:drive 14s linear infinite}
+        .bus:before,.bus:after{content:'';position:absolute;bottom:-8px;width:14px;height:14px;border-radius:50%;background:#000;box-shadow:inset 0 0 0 3px #555}
+        .bus:before{left:15px}.bus:after{right:15px}
+        .bike{bottom:22px;left:-60px;width:50px;height:18px;background:#06d6a0;border-radius:8px;animation:drive 18s linear infinite}
+        .train{bottom:57px;left:-200px;width:200px;height:20px;background:#667eea;border-radius:5px;box-shadow:0 3px 8px rgba(0,0,0,0.2);animation:drive 20s linear infinite}
+        .plane{top:8px;left:-80px;font-size:20px;animation:drive 12s linear infinite}
+        @keyframes drive{0%{transform:translateX(0)}100%{transform:translateX(calc(100vw + 300px))}}
+        
+        footer{margin-top:40px;padding:20px;color:var(--muted);border-top:1px solid var(--border);text-align:center}
+        @media print{
+            .nav,.hero,footer{display:none !important}
+            .btn{display:none !important}
+            iframe,.gallery,.landmarks,.bike,.train,.road,.plane{display:none !important}
+            .place-img{display:block !important;max-width:640px !important;height:auto !important}
+            body{background:#fff}
+        }
+        .modal{position:fixed;inset:0;background:rgba(0,0,0,0.7);display:none;align-items:center;justify-content:center;z-index:1000}
+        .modal.open{display:flex}
+        .modal-inner{position:relative;background:#000;border-radius:12px;overflow:hidden}
+        .modal-content{max-width:92vw;max-height:92vh;display:block}
+        .modal-close{position:absolute;top:10px;right:10px;background:#fff;border:none;border-radius:50%;width:36px;height:36px;cursor:pointer;box-shadow:0 6px 16px rgba(0,0,0,0.25);font-size:18px;line-height:36px;font-weight:bold}
+    </style>
+    <script>
+        function prepareImages(){
+            var imgs = Array.prototype.slice.call(document.querySelectorAll('img'));
+            for(var i=0;i<imgs.length;i++){
+                var img = imgs[i];
+                try{
+                    img.loading = 'eager';
+                    img.decoding = 'sync';
+                    if(!img.getAttribute('data-fallback-set')){
+                        img.onerror = function(){ this.src = 'https://upload.wikimedia.org/wikipedia/commons/6/6e/India_collage.jpg'; };
+                        img.setAttribute('data-fallback-set','1');
+                    }
+                }catch(e){}
+            }
+        }
+        function downloadPDF(){
+            prepareImages();
+            try{ window.print(); }catch(e){}
+        }
+    </script>
+</head>
+<body>
+    <nav class="nav">
+        <div class="nav-inner">
+            <div class="brand">
+                <span>
+                    <svg viewBox="0 0 64 64" aria-label="TourEase India logo">
+                        <defs>
+                            <linearGradient id="tri" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0" stop-color="#ff9933"/>
+                                <stop offset="0.5" stop-color="#ffffff"/>
+                                <stop offset="1" stop-color="#138808"/>
+                            </linearGradient>
+                        </defs>
+                        <rect x="4" y="4" width="56" height="56" rx="12" fill="url(#tri)" stroke="#ddd"/>
+                        <circle cx="32" cy="32" r="8" fill="#000080"/>
+                    </svg>
+                </span>
+                <span>TourEase India</span>
+            </div>
+            <div class="links">
+                <a href="/">Home</a>
+                <a href="/season_places?season=Summer">Travel</a>
+                <a href="/states">States</a>
+                <a href="/maps">Maps</a>
+                <a href="/offline_guide">Offline PDF</a>
+                {% if session.get('uid') %}
+                    <a href="/favorites">❤️ Favorites</a>
+                    <a href="/dashboard">Dashboard</a>
+                    <a href="/logout">Logout</a>
+                {% else %}
+                    <a href="/login">Login</a>
+                {% endif %}
+            </div>
+            <div class="top-stats">
+                <span class="badge-pill">👥 Total Users: <span id="totalUsers">—</span></span>
+                <span class="badge-pill">🟢 Active Now: <span id="activeUsers">—</span></span>
+                <span class="badge-pill" id="liveClock">—</span>
+            </div>
+        </div>
+    </nav>
+    {% block hero %}{% endblock %}
+    <div class="moving-strip" aria-hidden="true">
+        <div class="strip-label">TourEase India</div>
+        <div class="rail"></div>
+        <div class="train"></div>
+        <div class="road"></div>
+        <div class="bus"></div>
+        <div class="bike"></div>
+        <div class="plane">✈️</div>
+    </div>
+    <main class="container">
+        {% block content %}{% endblock %}
+    </main>
+    <footer class="container">
+        <div>© TourEase India · Beautiful journeys across seasons</div>
+    </footer>
+    <script>
+        function openPreview(src){ const m=document.getElementById('globalImgModal'); const i=document.getElementById('globalImgPreview'); if(!m||!i) return; i.src=src; m.classList.add('open'); }
+        function closePreview(){ const m=document.getElementById('globalImgModal'); if(m) m.classList.remove('open'); }
+        document.addEventListener('keydown', function(e){ if(e.key==='Escape'){ closePreview(); }});
+        function tick(){
+            const d = new Date();
+            const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+            const hr = d.getHours()%12 || 12;
+            const ampm = d.getHours()>=12 ? 'PM' : 'AM';
+            const pad = (n)=> String(n).padStart(2,'0');
+            document.getElementById('liveClock').textContent = `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()} | ${hr}:${pad(d.getMinutes())}:${pad(d.getSeconds())} ${ampm}`;
+        }
+        setInterval(tick,1000); tick();
+        async function loadStats(){
+            try{
+                const r = await fetch('/api/stats');
+                const j = await r.json();
+                document.getElementById('totalUsers').textContent = j.total;
+                document.getElementById('activeUsers').textContent = j.active;
+            }catch(e){}
+        }
+        setInterval(loadStats,10000); loadStats();
+        
+    </script>
+    <!-- Modal removed to avoid overlay issues -->
+</body>
+</html>

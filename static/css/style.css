@@ -1,0 +1,27 @@
+:root{--brand:#118ab2;--accent:#06d6a0;--warn:#ff7a00;--bg:#f8fafc;--text:#1a202c;--border:#e2e8f0}
+html,body{background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
+*{box-sizing:border-box}
+input,button,select,textarea{font-family:inherit}
+.container{max-width:1100px;margin:20px auto;padding:0 16px}
+.card{background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.05);padding:20px;transition:all .3s}
+.card:hover{box-shadow:0 8px 20px rgba(0,0,0,0.08)}
+.btn{border-radius:8px;font-weight:600;transition:all .3s;border:none;cursor:pointer;display:inline-block;padding:10px 16px;text-decoration:none}
+.btn-primary{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;box-shadow:0 4px 12px rgba(102,126,234,0.3)}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(102,126,234,0.4)}
+.btn-outline{background:#fff;color:var(--brand);border:2px solid var(--brand)}
+.btn-outline:hover{background:#f0f7ff;transform:translateY(-1px)}
+.accent-title{font-weight:800;letter-spacing:.3px}
+.glow-hover{transition:transform .25s, box-shadow .25s}
+.glow-hover:hover{transform:scale(1.02);box-shadow:0 12px 32px rgba(0,0,0,0.12)}
+.chip{display:inline-block;padding:6px 12px;border-radius:6px;background:#edf2f7;border:1px solid var(--border);font-size:13px;font-weight:600}
+.pill{display:inline-block;padding:12px 16px;border-radius:10px;font-weight:600;box-shadow:0 4px 12px rgba(0,0,0,0.08);transition:transform .2s, box-shadow .2s}
+.pill:hover{transform:scale(1.03);box-shadow:0 8px 18px rgba(0,0,0,0.12)}
+.pill-rapido{background:linear-gradient(135deg,#06d6a0,#0cbaba);color:#fff}
+.pill-bus{background:linear-gradient(135deg,#ff7a00,#ffd166);color:#fff}
+.pill-metro{background:linear-gradient(135deg,#118ab2,#06d6a0);color:#fff}
+.pill-flight{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff}
+.tip{border:1px solid var(--border);border-radius:8px;background:#f8fafc;padding:12px}
+.chip-winter{background:#dbeafe;border-color:#93c5fd;color:#0c4a6e}
+.chip-monsoon{background:#dcfce7;border-color:#86efac;color:#15803d}
+.chip-summer{background:#fed7aa;border-color:#fb923c;color:#9a3412}
+.season-filter{display:flex;gap:10px;flex-wrap:wrap;align-items:center}

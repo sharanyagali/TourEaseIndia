@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+{% block title %}Maps & Routes · TourEase India{% endblock %}
+{% block hero %}
+<section class="hero" style="background:linear-gradient(90deg,#d9f8e7,#fff)">
+    <div class="hero-inner">
+        <div>
+            <h1>Maps & Routes</h1>
+            <p class="muted">Select a destination and preview its road map.</p>
+        </div>
+        <div class="landmarks"><div class="plane"></div></div>
+    </div>
+</section>
+{% endblock %}
+{% block content %}
+    <label for="dest">Destination</label>
+    <select id="dest" onchange="(function(sel){const id=sel.value; const url=new URL(window.location.href); if(id){url.searchParams.set('destination_id',id);} else {url.searchParams.delete('destination_id');} window.location.href=url.toString();})(this)">
+        <option value="">Choose...</option>
+        {% for d in destinations %}
+            <option value="{{ d.id }}" {% if selected and selected.id == d.id %}selected{% endif %}>{{ d.name }}</option>
+        {% endfor %}
+    </select>
+    <div class="card" style="margin-top:12px">
+        <h2 class="section-title"><span>By State</span></h2>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <label for="stateSel">State</label>
+            <select id="stateSel" style="padding:8px 10px;border:1px solid #eee;border-radius:8px" onchange="(function(sel){const v=sel.value; const url=new URL(window.location.href); if(v){url.searchParams.set('state',v);} else {url.searchParams.delete('state');} window.location.href=url.toString();})(this)">
+                <option value="">Choose...</option>
+                {% for s in states %}
+                    <option value="{{ s }}" {% if sel_state==s %}selected{% endif %}>{{ s }}</option>
+                {% endfor %}
+            </select>
+            <button class="btn btn-outline" type="button" onclick="(function(){var sel=document.getElementById('stateSel'); var v=sel.value; var container=document.getElementById('stateMap'); if(!container){container=document.createElement('div'); container.id='stateMap'; container.className='card'; document.body.appendChild(container);} if(v){container.innerHTML='<iframe style=&quot;width:100%;height:380px;border:0;border-radius:8px&quot; loading=&quot;lazy&quot; allowfullscreen referrerpolicy=&quot;no-referrer-when-downgrade&quot; src=&quot;https://www.google.com/maps?q='+encodeURIComponent(v)+'&output=embed&quot;></iframe>';} else {container.innerHTML='<div class=&quot;muted&quot;>Choose a state to load map.</div>';}})()">Open State Map</button>
+        </div>
+    </div>
+    <script>
+        (function(){
+            var sel = document.getElementById('dest');
+            if(!sel) return;
+            sel.addEventListener('input', function(){
+                var id = this.value;
+                var name = this.options[this.selectedIndex] ? this.options[this.selectedIndex].text : '';
+                var container = document.getElementById('dynamicMap');
+                if(!container){
+                    container = document.createElement('div');
+                    container.id = 'dynamicMap';
+                    container.className = 'card';
+                    this.parentElement.appendChild(container);
+                }
+                if(id){
+                    container.innerHTML = '<iframe style="width:100%;height:380px;border:0;border-radius:8px" loading="lazy" allowfullscreen referrerpolicy="no-referrer-when-downgrade" src="https://www.google.com/maps?q='+encodeURIComponent(name)+'&output=embed"></iframe>';
+                }else{
+                    container.innerHTML = '<div class="card muted">Choose a destination to load map.</div>';
+                }
+            });
+        })();
+    </script>
+    <div style="margin-top:16px">
+        {% if selected and (selected.map_embed_url or selected.name) %}
+            <div class="card">
+                {% set embed_ok = (selected.map_embed_url and 'embed' in selected.map_embed_url) %}
+                <iframe id="routeMap"
+                        data-name="{{ selected.name }}"
+                        data-embed="{{ selected.map_embed_url or '' }}"
+                        src="{{ (embed_ok and selected.map_embed_url) or ('https://www.google.com/maps?q=' ~ selected.name|urlencode ~ '&output=embed') }}"
+                        allowfullscreen
+                        loading="lazy"
+                        referrerpolicy="no-referrer-when-downgrade"
+                        style="width:100%;height:380px;border:0;border-radius:8px"></iframe>
+                <div style="display:flex;gap:8px;margin-top:8px">
+                    <a class="btn btn-outline" target="_blank" rel="noopener" href="https://www.google.com/maps/search/{{ selected.name|replace(' ','+') }}">Open in Google Maps</a>
+                    <button class="btn" onclick="forceFallback()">Try Alternative Embed</button>
+                </div>
+                <script>
+                    (function(){
+                        var fm = document.getElementById('routeMap');
+                        if(!fm) return;
+                        var loaded = false;
+                        fm.addEventListener('load', function(){ loaded = true; });
+                        setTimeout(function(){
+                            if(!loaded){
+                                var name = fm.getAttribute('data-name') || '';
+                                fm.src = "https://www.google.com/maps?q=" + encodeURIComponent(name) + "&output=embed";
+                            }
+                        }, 1500);
+                        window.forceFallback = function(){
+                            var name = fm.getAttribute('data-name') || '';
+                            fm.src = "https://www.google.com/maps?q=" + encodeURIComponent(name) + "&output=embed";
+                        };
+                    })();
+                </script>
+            </div>
+        {% elif selected %}
+            <div class="card muted">Map not available for selected destination.</div>
+        {% else %}
+            <div class="card muted">Choose a destination to load map.</div>
+        {% endif %}
+    </div>
+{% endblock %}

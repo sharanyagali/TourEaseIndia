@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard · TourEase India{% endblock %}
+{% block content %}
+    <div class="card">
+        <h2>Welcome {{ user_name }}</h2>
+        <p class="muted">Plan journeys by season, view maps, and save PDFs.</p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <a class="btn btn-primary" href="/season_places?season=Summer">Explore Summer</a>
+            <a class="btn btn-outline" href="/season_places?season=Winter">Explore Winter</a>
+            <a class="btn btn-outline" href="/season_places?season=Monsoon">Explore Monsoon</a>
+            <a class="btn btn-outline" href="/maps">Open Maps</a>
+            <a class="btn btn-outline" href="/offline_guide">Offline Guide</a>
+        </div>
+    </div>
+{% endblock %}

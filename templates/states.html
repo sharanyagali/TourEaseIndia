@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+{% block title %}All States · TourEase India{% endblock %}
+{% block hero %}
+<section class="hero" style="background:#fff">
+    <div class="hero-inner">
+        <div>
+            <h1>Explore India by State</h1>
+            <p class="muted">Browse tourist places with images and season recommendations.</p>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px">
+                <a class="btn btn-outline" href="/season_places?season=All">All Seasons</a>
+                <a class="btn btn-outline" href="/season_places?season=Winter">Winter Picks</a>
+                <a class="btn btn-outline" href="/season_places?season=Monsoon">Monsoon Picks</a>
+                <a class="btn btn-outline" href="/season_places?season=Summer">Summer Picks</a>
+            </div>
+        </div>
+        <div></div>
+    </div>
+</section>
+{% endblock %}
+{% block content %}
+    <div class="grid">
+        {% for s in states %}
+        <div class="card place-row-lr">
+            <div>
+                <h2 style="margin:6px 0">{{ s.state }}</h2>
+                {% if s.image %}
+                    <img src="{{ s.image }}" alt="{{ s.state }} cover" class="place-img" onclick="openPreview('{{ s.image }}')">
+                {% endif %}
+                <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:10px">
+                    <div>
+                        <div style="font-weight:700">Places</div>
+                        <div class="muted">{{ s.count }}</div>
+                    </div>
+                    <div>
+                        <div style="font-weight:700">Avg Rating</div>
+                        <div class="muted">{{ s.avg_rating or '—' }}</div>
+                    </div>
+                    <div>
+                        <div style="font-weight:700">Dominant Season</div>
+                        {% if s.dominant_season == 'Winter' %}
+                            <span class="chip chip-winter">Winter</span>
+                        {% elif s.dominant_season == 'Monsoon' %}
+                            <span class="chip chip-monsoon">Monsoon</span>
+                        {% elif s.dominant_season == 'Summer' %}
+                            <span class="chip chip-summer">Summer</span>
+                        {% else %}
+                            <span class="chip">All</span>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <div style="font-weight:700">Quick View</div>
+                        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
+                            <a class="btn btn-outline" href="/places_by_state?state={{ s.state|urlencode }}">All</a>
+                            <a class="btn btn-outline" href="/places_by_state?state={{ s.state|urlencode }}&season=Winter">Winter</a>
+                            <a class="btn btn-outline" href="/places_by_state?state={{ s.state|urlencode }}&season=Monsoon">Monsoon</a>
+                            <a class="btn btn-outline" href="/places_by_state?state={{ s.state|urlencode }}&season=Summer">Summer</a>
+                        </div>
+                    </div>
+                </div>
+                {% if s.top_places and s.top_places|length > 0 %}
+                <div style="margin-top:12px">
+                    <div style="font-weight:700;margin-bottom:6px">Top Places</div>
+                    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+                        {% for tp in s.top_places %}
+                        <div class="card" style="padding:8px">
+                            {% if tp.image %}
+                                <img src="{{ tp.image }}" alt="{{ tp.name }}" style="width:100%;height:120px;object-fit:cover;border-radius:8px;border:1px solid #eee;cursor:pointer" onclick="openPreview('{{ tp.image }}')">
+                            {% endif %}
+                            <div style="font-weight:600;margin-top:6px">{{ tp.name }}</div>
+                            <div class="muted">{{ tp.city }}</div>
+                            {% if tp.best == 'Winter' %}
+                                <span class="chip chip-winter">Winter</span>
+                            {% elif tp.best == 'Monsoon' %}
+                                <span class="chip chip-monsoon">Monsoon</span>
+                            {% elif tp.best == 'Summer' %}
+                                <span class="chip chip-summer">Summer</span>
+                            {% else %}
+                                <span class="chip">All</span>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            <div>
+                <div style="font-weight:700;margin-top:6px">Map</div>
+                <iframe style="width:100%;height:220px;border:0;border-radius:8px" src="https://www.google.com/maps?q={{ s.state|urlencode }}&output=embed" allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+{% endblock %}

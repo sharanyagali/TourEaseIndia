@@ -1,0 +1,182 @@
+{% extends 'base.html' %}
+{% block title %}{{ season }} · TourEase India{% endblock %}
+{% block hero %}
+<section class="hero" style="background:#fff">
+    <div class="hero-inner">
+        <div>
+            <h1>Season: {{ season }}</h1>
+            <p class="muted">Recommended packages tailored to weather and experiences.</p>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px">
+                <a class="btn btn-outline" href="/season_places?season=Summer">Explore Summer</a>
+                <a class="btn btn-outline" href="/season_places?season=Winter">Explore Winter</a>
+                <a class="btn btn-outline" href="/season_places?season=Monsoon">Explore Monsoon</a>
+            </div>
+        </div>
+        <div></div>
+    </div>
+</section>
+{% endblock %}
+{% block content %}
+    {% if places is defined and places|length > 0 %}
+        <div class="card">
+            <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between">
+                <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+                    <strong>Filter by season</strong>
+                {% if state %}
+                    <a class="btn {% if season=='All' %}btn-primary{% else %}btn-outline{% endif %}" href="/places_by_state?state={{ state|urlencode }}&season=All">All</a>
+                    <a class="btn {% if season=='Winter' %}btn-primary{% else %}btn-outline{% endif %}" href="/places_by_state?state={{ state|urlencode }}&season=Winter">Winter</a>
+                    <a class="btn {% if season=='Monsoon' %}btn-primary{% else %}btn-outline{% endif %}" href="/places_by_state?state={{ state|urlencode }}&season=Monsoon">Monsoon</a>
+                    <a class="btn {% if season=='Summer' %}btn-primary{% else %}btn-outline{% endif %}" href="/places_by_state?state={{ state|urlencode }}&season=Summer">Summer</a>
+                {% else %}
+                    <a class="btn {% if season=='All' %}btn-primary{% else %}btn-outline{% endif %}" href="/season_places?season=All">All</a>
+                    <a class="btn {% if season=='Winter' %}btn-primary{% else %}btn-outline{% endif %}" href="/season_places?season=Winter">Winter</a>
+                    <a class="btn {% if season=='Monsoon' %}btn-primary{% else %}btn-outline{% endif %}" href="/season_places?season=Monsoon">Monsoon</a>
+                    <a class="btn {% if season=='Summer' %}btn-primary{% else %}btn-outline{% endif %}" href="/season_places?season=Summer">Summer</a>
+                {% endif %}
+                </div>
+                <div>
+                    {% if state %}
+                    <a class="btn btn-outline" href="/itinerary?state={{ state|urlencode }}&days=5">Plan Itinerary</a>
+                    {% else %}
+                    <a class="btn btn-outline" href="/states">Plan Itinerary</a>
+                    {% endif %}
+                    <a class="btn btn-primary" href="/download_pdf?state={{ state|urlencode }}&season={{ season|urlencode }}">Download Guide (PDF)</a>
+                </div>
+            </div>
+        </div>
+        {% if states is defined and states|length > 0 %}
+        <div class="card">
+            <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between">
+                <div>
+                    <strong>State</strong>
+                    <select id="stateSelect" style="margin-left:8px;padding:8px 10px;border:1px solid #eee;border-radius:8px">
+                        {% for s in states %}
+                            <option value="{{ s }}" {% if s==state %}selected{% endif %}>{{ s }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="muted">Showing places in {{ state or 'All States' }}</div>
+            </div>
+            <script>
+                (function(){
+                    var sel = document.getElementById('stateSelect');
+                    if(sel){
+                        sel.addEventListener('change', function(){
+                            var s = encodeURIComponent(this.value);
+                            var season = encodeURIComponent('{{ season }}');
+                            window.location.href = '/places_by_state?state=' + s + '&season=' + season;
+                        });
+                    }
+                })();
+            </script>
+        </div>
+        {% endif %}
+        <div class="card">
+            <h2 class="section-title"><span>City Transport & Bookings</span></h2>
+            <div style="display:flex;gap:10px;flex-wrap:wrap">
+                <a class="btn btn-outline" href="https://www.rapido.bike/" target="_blank" rel="noopener">Rapido</a>
+                <a class="btn btn-outline" href="https://www.redbus.in/" target="_blank" rel="noopener">Bus Tickets</a>
+                    <a class="btn btn-outline" href="/tickets{% if state %}?from={{ state|urlencode }}{% endif %}" target="_blank" rel="noopener">Flight Tickets</a>
+                {% if transport is defined and transport.metros and transport.metros|length > 0 %}
+                    {% for m in transport.metros %}
+                        <a class="btn btn-outline" href="{{ m.url }}" target="_blank" rel="noopener">{{ m.label }}</a>
+                    {% endfor %}
+                {% endif %}
+            </div>
+            {% if state and state == 'Telangana' %}
+            <div class="card" style="margin-top:10px">
+                <strong>Tip</strong>
+                <p class="muted" style="margin:6px 0">Metro tickets are available in PhonePe and Paytm. No need to download the T Savari app.</p>
+            </div>
+            {% endif %}
+        </div>
+        {% for p in places %}
+        {% if loop.index <= 5 %}
+        {% set slug = ('place-' ~ (p.name|lower|replace(' ','-')) ~ '-' ~ (p.city|lower|replace(' ','-'))) %}
+        <div id="{{ slug }}" class="card place-row-lr">
+            <div>
+                {% if p.image %}
+                    <img src="{{ p.image }}" alt="{{ p.name }}" class="place-img" onclick="openPreview('{{ p.image }}')" onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/6/6e/India_collage.jpg'" loading="lazy">
+                {% endif %}
+            </div>
+            <div>
+                <h2 style="margin:6px 0">{{ p.name }}</h2>
+                {% if p.best == 'Winter' %}
+                    <span class="badge-pill">Best in Winter</span>
+                {% elif p.best == 'Monsoon' %}
+                    <span class="badge-pill">Ideal in Monsoon</span>
+                {% elif p.best == 'Summer' %}
+                    <span class="badge-pill">Good in Summer</span>
+                {% else %}
+                    <span class="badge-pill">All Seasons</span>
+                {% endif %}
+                <div class="muted" style="margin-top:6px">{{ p.city }} · {{ p.state }}</div>
+                {% if p.desc %}
+                <p style="margin:6px 0">{{ p.desc }}</p>
+                {% endif %}
+                <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:10px">
+                    <div>
+                        <div style="font-weight:700">Entrance Fee</div>
+                        <div class="muted">{{ p.fee or '—' }}</div>
+                    </div>
+                    <div>
+                        <div style="font-weight:700">Google Rating</div>
+                        <div class="muted">{{ p.rating or '—' }}</div>
+                    </div>
+                    <div>
+                        <div style="font-weight:700">Time Needed</div>
+                        <div class="muted">{{ p.time_hrs or '—' }} hrs</div>
+                    </div>
+                    <div>
+                        <div style="font-weight:700">Weekly Off</div>
+                        <div class="muted">{{ p.weekly_off or '—' }}</div>
+                    </div>
+                    <div>
+                        <div style="font-weight:700">Season Note</div>
+                        <div class="muted">{{ p.best_text or '—' }}</div>
+                    </div>
+                    <div>
+                        <div style="font-weight:700">DSLR Allowed</div>
+                        <div class="muted">{{ p.dslr or '—' }}</div>
+                    </div>
+                    <div>
+                        <div style="font-weight:700">Airport/Railway</div>
+                        <div class="muted">Approx distance: —</div>
+                    </div>
+                </div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+                    <a class="btn btn-outline" href="https://www.redbus.in/" target="_blank" rel="noopener">Bus Tickets</a>
+                    <a class="btn btn-outline" href="https://www.google.com/search?q=hotels+near+{{ (p.name ~ ' ' ~ p.city ~ ' ' ~ p.state)|urlencode }}" target="_blank" rel="noopener">Stay Nearby</a>
+                    <a class="btn btn-outline" href="https://www.google.com/search?q={{ (p.state ~ ' local transport')|urlencode }}" target="_blank" rel="noopener">Local Transport</a>
+                    {% if state %}
+                    <a class="btn btn-outline" href="/itinerary?state={{ state|urlencode }}&days=5">Add to Itinerary</a>
+                    {% endif %}
+                    <a class="btn btn-outline" href="https://www.google.com/search?q={{ (p.name ~ ' ' ~ p.city ~ ' ' ~ p.state)|urlencode }}" target="_blank" rel="noopener">View Details</a>
+                </div>
+                {% set mq = p.map_q if p.map_q else (p.city ~ ', ' ~ p.state if p.city and p.state else (p.name ~ ', India')) %}
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-top:12px">
+                    <div style="font-weight:700">Map</div>
+                    <a class="btn btn-outline" target="_blank" rel="noopener" href="https://www.google.com/maps/search/{{ mq|urlencode }}">Open Map</a>
+                </div>
+                <iframe style="width:100%;height:220px;border:0;border-radius:8px" src="https://www.google.com/maps?q={{ mq|urlencode }}&output=embed" allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+            </div>
+        </div>
+        {% endif %}
+        {% endfor %}
+    {% elif packages and packages|length > 0 %}
+        {% for p in packages %}
+            <div class="card">
+                <h2 style="margin:6px 0">{{ p.name }}</h2>
+                <div class="muted">Duration: {{ p.duration }} | Price: ₹{{ p.price }}</div>
+                <p>{{ p.details }}</p>
+                {% if p.destination_id %}
+                    <a class="btn btn-primary" href="/place/{{ p.destination_id }}">View Destination</a>
+                {% endif %}
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="card">
+            <div class="muted">No results available for this season.</div>
+        </div>
+    {% endif %}
+{% endblock %}
